@@ -1,0 +1,1 @@
+{"USE_FEATURES": ["I_ave", "I_std", "I_sum", "Vpack_ave", "Vpack_std", "Vpack_sum", "SOC_ave", "SOC_std", "SOC_sum", "Vmax_ave", "Vmax_std", "Vmax_sum", "Vmin_ave", "Vmin_std", "Vmin_sum", "Tmax_ave", "Tmax_std", "Tmax_sum", "Tmin_ave", "Tmin_std", "Tmin_sum", "Vd_ave", "Vd_std", "Vd_sum", "Td_ave", "Td_std", "Td_sum"], "N_KNOWN": 6}
