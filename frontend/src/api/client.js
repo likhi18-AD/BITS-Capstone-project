@@ -38,3 +38,17 @@ export async function loginOperator(payload) {
   // backend returns { operator_id, email, employee_id, message }
   return res.data;
 }
+// Request password reset email
+export async function requestPasswordReset(email) {
+  const res = await api.post("/auth/forgot-password", { email });
+  return res.data;
+}
+
+// Complete password reset using token from email link
+export async function resetPassword(token, newPassword) {
+  const res = await api.post("/auth/reset-password", {
+    token,
+    new_password: newPassword,
+  });
+  return res.data;
+}

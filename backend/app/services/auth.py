@@ -33,6 +33,7 @@ EMPLOYEE_IDS_PATH: Path = ART_DIR / "employee_ids.txt"
 
 # ---------- Small error types ----------
 
+
 class EmployeeNotFound(Exception):
     pass
 
@@ -41,15 +42,21 @@ class OperatorAlreadyExists(Exception):
     pass
 
 
+class OperatorNotFound(Exception):
+    """Raised when an operator cannot be located in the JSON DB."""
+    pass
+
+
 @dataclass
 class Operator:
-    operator_id: str
-    email: str
-    employee_id: str
-    password_hash: str
+  operator_id: str
+  email: str
+  employee_id: str
+  password_hash: str
 
 
 # ---------- Helpers for JSON DB ----------
+
 
 def _load_operators() -> List[Dict]:
     if not OPERATORS_DB_PATH.exists():
@@ -107,6 +114,7 @@ def _load_valid_employee_ids() -> Optional[set]:
 
 # ---------- Public API used by FastAPI ----------
 
+
 def register_operator(email: str, password: str, employee_id: str) -> Operator:
     """
     Register a new operator if employee_id is valid and not already registered.
@@ -124,7 +132,9 @@ def register_operator(email: str, password: str, employee_id: str) -> Operator:
 
     valid_ids = _load_valid_employee_ids()
     if valid_ids is not None and employee_id not in valid_ids:
-        raise EmployeeNotFound(f"Employee ID '{employee_id}' is not in company records.")
+        raise EmployeeNotFound(
+            f"Employee ID '{employee_id}' is not in company records."
+        )
 
     ops = _load_operators()
 
@@ -184,6 +194,58 @@ def login_operator(operator_id: str, password: str) -> Operator:
             )
 
     raise ValueError("Invalid operator ID or password.")
+
+
+def find_operator_by_email(email: str) -> Operator:
+    """
+    Look up an operator by email. Raises OperatorNotFound if not present.
+    """
+    email = email.strip().lower()
+    if not email:
+        raise ValueError("Email is required.")
+
+    ops = _load_operators()
+    for o in ops:
+        if o.get("email") == email:
+            return Operator(
+                operator_id=o.get("operator_id", ""),
+                email=o.get("email", ""),
+                employee_id=o.get("employee_id", ""),
+                password_hash=o.get("password_hash", ""),
+            )
+
+    raise OperatorNotFound(f"No operator registered with email '{email}'.")
+
+
+def reset_operator_password(operator_id: str, new_password: str) -> Operator:
+    """
+    Update the stored password_hash for an operator_id.
+    Raises OperatorNotFound if no such operator exists.
+    """
+    operator_id = operator_id.strip().upper()
+    if not operator_id or not new_password:
+        raise ValueError("Operator ID and new password are required.")
+
+    ops = _load_operators()
+    target: Optional[Dict] = None
+    for o in ops:
+        if o.get("operator_id") == operator_id:
+            target = o
+            break
+
+    if target is None:
+        raise OperatorNotFound(f"Operator '{operator_id}' not found.")
+
+    new_hash = _hash_password(new_password)
+    target["password_hash"] = new_hash
+    _save_operators(ops)
+
+    return Operator(
+        operator_id=operator_id,
+        email=target.get("email", ""),
+        employee_id=target.get("employee_id", ""),
+        password_hash=new_hash,
+    )
 
 
 def _log_fake_email(email: str, operator_id: str) -> None:

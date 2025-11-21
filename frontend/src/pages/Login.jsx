@@ -4,12 +4,13 @@ import { useNavigate } from "react-router-dom";
 import {
   loginOperator,
   registerOperator,
+  requestPasswordReset, // NEW
 } from "../api/client";
 import "./Login.css";
 
 function Login() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState("login"); // "login" | "register"
+  const [mode, setMode] = useState("login"); // "login" | "register" | "forgot"
 
   // Login form state
   const [loginId, setLoginId] = useState("");
@@ -19,6 +20,9 @@ function Login() {
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regEmployeeId, setRegEmployeeId] = useState("");
+
+  // Forgot-password form state
+  const [forgotEmail, setForgotEmail] = useState("");
 
   // Status messages
   const [error, setError] = useState("");
@@ -32,6 +36,12 @@ function Login() {
 
   const switchToRegister = () => {
     setMode("register");
+    setError("");
+    setInfo("");
+  };
+
+  const switchToForgot = () => {
+    setMode("forgot");
     setError("");
     setInfo("");
   };
@@ -53,7 +63,6 @@ function Login() {
         password: loginPassword,
       });
 
-      // Optionally store something in localStorage for later
       window.localStorage.setItem(
         "wind_granma_operator",
         JSON.stringify({
@@ -65,7 +74,6 @@ function Login() {
 
       setInfo("Login successful. Redirecting to fleet dashboard…");
 
-      // Navigate to fleet overview
       setTimeout(() => {
         navigate("/fleet");
       }, 500);
@@ -99,17 +107,14 @@ function Login() {
 
       const operatorId = res.operator_id;
 
-      // Show a friendly message with the generated ID
       setInfo(
         `Congratulations! You are now registered as a Wind Granma fleet operator. ` +
           `Your unique operator ID is ${operatorId}. It has also been emailed to you.`
       );
 
-      // Pre-fill login form so user can log in immediately
       setLoginId(operatorId);
       setLoginPassword(regPassword);
 
-      // Switch to login tab after a moment
       setTimeout(() => {
         setMode("login");
       }, 1200);
@@ -123,12 +128,36 @@ function Login() {
     }
   };
 
+  // Handle forgot-password submit
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setInfo("");
+
+    if (!forgotEmail) {
+      setError("Please enter the email you used for registration.");
+      return;
+    }
+
+    try {
+      const res = await requestPasswordReset(forgotEmail);
+      setInfo(res.message || "If an account exists, a reset link has been sent.");
+      setForgotEmail("");
+    } catch (err) {
+      console.error("Forgot password failed", err);
+      const msg =
+        err?.response?.data?.detail ||
+        err?.message ||
+        "Unable to process reset request. Please try again.";
+      setError(msg);
+    }
+  };
+
   return (
     <div className="loginPage">
       {/* Left side: EV station GIF */}
       <div className="loginLeft">
         <div className="loginGifOverlay">
-          {/* Put your GIF under public/assets/ev-station.gif or update the src */}
           <img
             src="/assets/ev-station.gif"
             alt="EV charging station animation"
@@ -153,28 +182,26 @@ function Login() {
             of your EV fleet, powered by ML-based battery forecasting.
           </p>
 
+          {/* Tabs only switch between login and register */}
           <div className="loginTabs">
             <button
               type="button"
-              className={
-                mode === "login" ? "loginTab active" : "loginTab"
-              }
+              className={mode === "login" ? "loginTab active" : "loginTab"}
               onClick={switchToLogin}
             >
               Sign in
             </button>
             <button
               type="button"
-              className={
-                mode === "register" ? "loginTab active" : "loginTab"
-              }
+              className={mode === "register" ? "loginTab active" : "loginTab"}
               onClick={switchToRegister}
             >
               Register
             </button>
           </div>
 
-          {mode === "login" ? (
+          {/* LOGIN MODE */}
+          {mode === "login" && (
             <form className="loginForm" onSubmit={handleLoginSubmit}>
               <label className="loginLabel">
                 Operator ID
@@ -201,6 +228,16 @@ function Login() {
               </button>
 
               <p className="loginHint">
+                <button
+                  type="button"
+                  className="loginInlineLink"
+                  onClick={switchToForgot}
+                >
+                  Forgot password?
+                </button>
+              </p>
+
+              <p className="loginHint">
                 New to Wind Granma?{" "}
                 <button
                   type="button"
@@ -211,7 +248,10 @@ function Login() {
                 </button>
               </p>
             </form>
-          ) : (
+          )}
+
+          {/* REGISTER MODE */}
+          {mode === "register" && (
             <form className="loginForm" onSubmit={handleRegisterSubmit}>
               <label className="loginLabel">
                 Operator email
@@ -255,6 +295,36 @@ function Login() {
                   onClick={switchToLogin}
                 >
                   Sign in instead
+                </button>
+              </p>
+            </form>
+          )}
+
+          {/* FORGOT PASSWORD MODE */}
+          {mode === "forgot" && (
+            <form className="loginForm" onSubmit={handleForgotSubmit}>
+              <label className="loginLabel">
+                Registered email
+                <input
+                  type="email"
+                  placeholder="you@company.com"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                />
+              </label>
+
+              <button type="submit" className="loginPrimaryBtn">
+                Send reset link
+              </button>
+
+              <p className="loginHint">
+                Remembered your password?{" "}
+                <button
+                  type="button"
+                  className="loginInlineLink"
+                  onClick={switchToLogin}
+                >
+                  Back to sign in
                 </button>
               </p>
             </form>
