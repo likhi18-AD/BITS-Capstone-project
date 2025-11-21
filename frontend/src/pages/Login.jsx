@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {
   loginOperator,
   registerOperator,
-  requestPasswordReset, // NEW
+  requestPasswordReset,
 } from "../api/client";
 import "./Login.css";
 
@@ -15,11 +15,13 @@ function Login() {
   // Login form state
   const [loginId, setLoginId] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [loginPwdVisible, setLoginPwdVisible] = useState(false);
 
   // Register form state
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regEmployeeId, setRegEmployeeId] = useState("");
+  const [regPwdVisible, setRegPwdVisible] = useState(false);
 
   // Forgot-password form state
   const [forgotEmail, setForgotEmail] = useState("");
@@ -215,12 +217,27 @@ function Login() {
 
               <label className="loginLabel">
                 Password
-                <input
-                  type="password"
-                  placeholder="Your password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                />
+                <div className="passwordFieldWrapper">
+                  <input
+                    type={loginPwdVisible ? "text" : "password"}
+                    placeholder="Your password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="passwordToggleBtn"
+                    onClick={() => setLoginPwdVisible((v) => !v)}
+                    aria-label={loginPwdVisible ? "Hide password" : "Show password"}
+                  >
+                    <span
+                      className={
+                        "passwordEyeIcon" +
+                        (loginPwdVisible ? " passwordEyeIcon-open" : "")
+                      }
+                    />
+                  </button>
+                </div>
               </label>
 
               <button type="submit" className="loginPrimaryBtn">
@@ -265,12 +282,27 @@ function Login() {
 
               <label className="loginLabel">
                 Choose password
-                <input
-                  type="password"
-                  placeholder="Create a password"
-                  value={regPassword}
-                  onChange={(e) => setRegPassword(e.target.value)}
-                />
+                <div className="passwordFieldWrapper">
+                  <input
+                    type={regPwdVisible ? "text" : "password"}
+                    placeholder="Create a password"
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="passwordToggleBtn"
+                    onClick={() => setRegPwdVisible((v) => !v)}
+                    aria-label={regPwdVisible ? "Hide password" : "Show password"}
+                  >
+                    <span
+                      className={
+                        "passwordEyeIcon" +
+                        (regPwdVisible ? " passwordEyeIcon-open" : "")
+                      }
+                    />
+                  </button>
+                </div>
               </label>
 
               <label className="loginLabel">

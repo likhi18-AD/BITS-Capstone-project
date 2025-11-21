@@ -152,6 +152,86 @@
   box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
 }
 
+/* PASSWORD FIELD EYE TOGGLE */
+
+.passwordFieldWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.passwordFieldWrapper input {
+  width: 100%;
+  padding-right: 36px; /* leave space for eye icon */
+}
+
+.passwordToggleBtn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.passwordToggleBtn:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+/* Simple CSS eye icon to match dark theme */
+
+.passwordEyeIcon {
+  width: 18px;
+  height: 11px;
+  border-radius: 999px;
+  border: 1.5px solid #64748b;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.passwordEyeIcon::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.95);
+}
+
+/* diagonal slash for "hidden" state */
+.passwordEyeIcon::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: 50%;
+  height: 1.5px;
+  background: rgba(148, 163, 184, 0.95);
+  transform-origin: center;
+  transform: rotate(-35deg);
+  opacity: 1;
+}
+
+/* when visible, remove slash */
+.passwordEyeIcon-open::after {
+  opacity: 0;
+}
+
+.passwordToggleBtn:hover .passwordEyeIcon {
+  border-color: #e5e7eb;
+}
+
+/* Buttons, hints */
+
 .loginPrimaryBtn {
   margin-top: 10px;
   border-radius: 999px;
@@ -212,24 +292,6 @@
   color: #bae6fd;
 }
 
-/* Override browser autofill so all fields match dark theme */
-
-.loginLabel input:-webkit-autofill,
-.loginLabel input:-webkit-autofill:hover,
-.loginLabel input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0px 1000px #020617 inset;
-  box-shadow: 0 0 0px 1000px #020617 inset;
-  -webkit-text-fill-color: #e5e7eb;
-  border-color: #1f2937;
-  transition: background-color 9999s ease-out, color 9999s ease-out;
-}
-
-.loginLabel input:-moz-autofill {
-  box-shadow: 0 0 0px 1000px #020617 inset;
-  -moz-text-fill-color: #e5e7eb;
-  border-color: #1f2937;
-}
-
 /* Responsive tweaks */
 @media (max-width: 900px) {
   .loginPage {
@@ -248,3 +310,4 @@
     max-width: 100%;
   }
 }
+

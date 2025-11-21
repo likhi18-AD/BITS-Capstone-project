@@ -16,6 +16,8 @@ export default function ResetPassword() {
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPwd, setShowNewPwd] = useState(false);
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
 
@@ -43,7 +45,6 @@ export default function ResetPassword() {
       const res = await resetPassword(token, newPassword);
       setInfo(res.message || "Password reset successfully.");
 
-      // After a short delay, go back to login
       setTimeout(() => {
         navigate("/");
       }, 1500);
@@ -88,22 +89,54 @@ export default function ResetPassword() {
           <form className="loginForm" onSubmit={handleSubmit}>
             <label className="loginLabel">
               New password
-              <input
-                type="password"
-                placeholder="Enter new password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
+              <div className="passwordFieldWrapper">
+                <input
+                  type={showNewPwd ? "text" : "password"}
+                  placeholder="Enter new password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="passwordToggleBtn"
+                  onClick={() => setShowNewPwd((v) => !v)}
+                  aria-label={showNewPwd ? "Hide password" : "Show password"}
+                >
+                  <span
+                    className={
+                      "passwordEyeIcon" +
+                      (showNewPwd ? " passwordEyeIcon-open" : "")
+                    }
+                  />
+                </button>
+              </div>
             </label>
 
             <label className="loginLabel">
               Confirm new password
-              <input
-                type="password"
-                placeholder="Re-type new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
+              <div className="passwordFieldWrapper">
+                <input
+                  type={showConfirmPwd ? "text" : "password"}
+                  placeholder="Re-type new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="passwordToggleBtn"
+                  onClick={() => setShowConfirmPwd((v) => !v)}
+                  aria-label={
+                    showConfirmPwd ? "Hide password" : "Show password"
+                  }
+                >
+                  <span
+                    className={
+                      "passwordEyeIcon" +
+                      (showConfirmPwd ? " passwordEyeIcon-open" : "")
+                    }
+                  />
+                </button>
+              </div>
             </label>
 
             <button type="submit" className="loginPrimaryBtn">
@@ -129,3 +162,4 @@ export default function ResetPassword() {
     </div>
   );
 }
+
