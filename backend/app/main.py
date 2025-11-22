@@ -1,7 +1,7 @@
 # backend/app/main.py
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -13,6 +13,7 @@ import hashlib
 import hmac
 import json
 import time
+from pathlib import Path  # <-- added
 
 from .config import (
     FEAT_DF_CSV,
@@ -27,6 +28,7 @@ from .config import (
 )
 from .services import telemetry
 from .services import auth
+from .services import fleet_registry  # <-- added
 from . import ml_forecast
 
 
@@ -272,6 +274,90 @@ def vehicle_timeseries(vehicle_id: str):
         "columns": cols,
         "records": records,
     }
+
+
+# ------------------- REGISTERED VEHICLES (PER-OPERATOR) -------------------
+# NEW SECTION
+
+
+class RegisteredVehicleOut(BaseModel):
+    """
+    Shape matches the objects returned by /vehicles so the frontend
+    VehicleCard can render them without any special casing.
+    """
+    vehicle_id: str
+    display_name: str
+    reg_number: str | None = None
+    owner_name: str | None = None
+    monitoring_mode: str | None = None
+    consent_file: str | None = None
+    n_samples: int
+    cap_min: float | None = None
+    cap_max: float | None = None
+    t_min: float | None = None
+    t_max: float | None = None
+    source: str
+
+
+@app.post(
+    "/operators/{operator_id}/vehicles",
+    response_model=RegisteredVehicleOut,
+    summary="Register a new vehicle for a given operator",
+)
+async def register_vehicle_for_operator(
+    operator_id: str,
+    vehicle_name: str = Form(...),
+    reg_number: str = Form(""),
+    owner_name: str = Form(""),
+    monitoring_mode: str = Form("monthly"),
+    consent_file: UploadFile | None = File(None),
+):
+    """
+    Creates a persistent vehicle entry in fleet_registry.sqlite3 and
+    (optionally) stores the uploaded consent PDF into DATA_DIR/consent_forms.
+    """
+    try:
+        consent_filename: str | None = None
+
+        if consent_file is not None:
+            consent_dir = fleet_registry.get_consent_dir()
+            consent_dir.mkdir(parents=True, exist_ok=True)
+
+            original = consent_file.filename or "consent.pdf"
+            ext = Path(original).suffix or ".pdf"
+            safe_name = f"{operator_id}_{int(time.time())}{ext}"
+            dest_path = consent_dir / safe_name
+
+            contents = await consent_file.read()
+            with dest_path.open("wb") as f:
+                f.write(contents)
+
+            consent_filename = safe_name
+
+        vehicle = fleet_registry.register_vehicle(
+            operator_id=operator_id,
+            display_name=vehicle_name,
+            reg_number=reg_number or None,
+            owner_name=owner_name or None,
+            monitoring_mode=monitoring_mode,
+            consent_filename=consent_filename,
+        )
+        return vehicle
+
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to register vehicle: {exc}",
+        )
+
+
+@app.get(
+    "/operators/{operator_id}/vehicles",
+    summary="List vehicles registered by this operator",
+)
+def list_vehicles_for_operator(operator_id: str):
+    vehicles = fleet_registry.list_vehicles_for_operator(operator_id)
+    return {"vehicles": vehicles}
 
 
 # ------------------- AUTH: REGISTER & LOGIN -------------------

@@ -11,7 +11,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { fetchVehicles } from "../api/client";
+import {
+  fetchVehicles,
+  fetchOperatorVehicles,
+  getStoredOperator,
+} from "../api/client";
 import VehicleCard from "../components/VehicleCard";
 import RegisterVehicleModal from "../components/RegisterVehicleModal";
 import MessageFeed from "../components/MessageFeed";
@@ -75,6 +79,10 @@ export default function FleetOverview() {
   const [error, setError] = useState("");
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
 
+  // operator + per-operator vehicles
+  const [operator, setOperator] = useState(null);
+  const [operatorVehicles, setOperatorVehicles] = useState([]);
+
   // message feed + saved IDs
   const [messages, setMessages] = useState([]);
   const [idItems, setIdItems] = useState([]);
@@ -85,7 +93,7 @@ export default function FleetOverview() {
   const [vehicleQuery, setVehicleQuery] = useState("");
   const [vehicleListExpanded, setVehicleListExpanded] = useState(false);
 
-  // --- load vehicles from backend --- //
+  // --- load vehicles from backend (demo fleet) --- //
   useEffect(() => {
     let cancelled = false;
 
@@ -113,6 +121,34 @@ export default function FleetOverview() {
     };
   }, []);
 
+  // --- load operator + per-operator vehicles --- //
+  useEffect(() => {
+    const op = getStoredOperator();
+    if (!op) {
+      navigate("/");
+      return;
+    }
+    setOperator(op);
+
+    let cancelled = false;
+
+    async function loadOperatorVehicles() {
+      try {
+        const list = await fetchOperatorVehicles(op.operator_id);
+        if (cancelled) return;
+        setOperatorVehicles(list || []);
+      } catch (err) {
+        console.error("Failed to load operator vehicles", err);
+      }
+    }
+
+    loadOperatorVehicles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
+
   // --- auto-generate messages every 2 minutes based on remote vehicles --- //
   useEffect(() => {
     if (!remoteVehicles.length) return;
@@ -139,8 +175,8 @@ export default function FleetOverview() {
   }, [remoteVehicles]);
 
   const allVehicles = useMemo(
-    () => [...remoteVehicles, ...localVehicles],
-    [remoteVehicles, localVehicles]
+    () => [...remoteVehicles, ...operatorVehicles, ...localVehicles],
+    [remoteVehicles, operatorVehicles, localVehicles]
   );
 
   const fleetSize = allVehicles.length;
@@ -189,6 +225,8 @@ export default function FleetOverview() {
   };
   const handleLogout = () => {
     try {
+      // clear both possible keys just in case
+      window.localStorage.removeItem("windgranma_operator");
       window.localStorage.removeItem("wind_granma_operator");
     } catch (e) {
       console.error("Failed to clear operator info", e);
@@ -196,7 +234,29 @@ export default function FleetOverview() {
     navigate("/");
   };
 
-  const handleSaveVehicle = (form) => {
+  const handleSaveVehicle = (saved) => {
+    // If this came from backend (per-operator registered vehicle)
+    if (saved && saved.source === "registered") {
+      const v = saved;
+
+      setOperatorVehicles((prev) => [...prev, v]);
+
+      const now = new Date();
+      setIdItems((prev) => [
+        {
+          id: v.vehicle_id,
+          vehicleName: v.display_name,
+          timestamp: now.toLocaleString(),
+        },
+        ...prev,
+      ]);
+
+      setIsRegisterOpen(false);
+      return;
+    }
+
+    // Fallback: original purely local behaviour
+    const form = saved;
     const uniqueId = `L-${Date.now().toString(36)}-${Math.round(
       Math.random() * 1e4
     ).toString(36)}`;
@@ -552,6 +612,7 @@ export default function FleetOverview() {
         isOpen={isRegisterOpen}
         onClose={() => setIsRegisterOpen(false)}
         onSave={handleSaveVehicle}
+        operatorId={operator?.operator_id}
       />
     </div>
   );

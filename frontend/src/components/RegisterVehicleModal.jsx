@@ -1,14 +1,21 @@
 // frontend/src/components/RegisterVehicleModal.jsx
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { registerOperatorVehicle } from "../api/client";
 
-export default function RegisterVehicleModal({ isOpen, onClose, onSave }) {
+export default function RegisterVehicleModal({
+  isOpen,
+  onClose,
+  onSave,
+  operatorId, // new optional prop – current logged-in operator
+}) {
   const [vehicleName, setVehicleName] = useState("");
   const [regNumber, setRegNumber] = useState("");
   const [ownerName, setOwnerName] = useState("");
   const [monitoringMode, setMonitoringMode] = useState("monthly");
   const [consentFile, setConsentFile] = useState(null);
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const resetForm = () => {
     setVehicleName("");
@@ -17,6 +24,7 @@ export default function RegisterVehicleModal({ isOpen, onClose, onSave }) {
     setMonitoringMode("monthly");
     setConsentFile(null);
     setError("");
+    setSubmitting(false);
   };
 
   const handleClose = () => {
@@ -29,7 +37,7 @@ export default function RegisterVehicleModal({ isOpen, onClose, onSave }) {
     setConsentFile(file);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!vehicleName || !regNumber || !ownerName) {
       setError("Please fill in vehicle name, registration number and owner.");
@@ -40,15 +48,45 @@ export default function RegisterVehicleModal({ isOpen, onClose, onSave }) {
       return;
     }
 
-    onSave?.({
-      vehicleName,
-      regNumber,
-      ownerName,
-      monitoringMode,
-      consentFileName: consentFile.name,
-    });
+    setError("");
+    setSubmitting(true);
 
-    resetForm();
+    try {
+      let payloadForOnSave;
+
+      if (operatorId) {
+        // Persist in backend for this operator
+        const backendVehicle = await registerOperatorVehicle(operatorId, {
+          vehicleName,
+          regNumber,
+          ownerName,
+          monitoringMode,
+          consentFile,
+        });
+
+        // backendVehicle already has vehicle_id, source: "registered", etc.
+        payloadForOnSave = backendVehicle;
+      } else {
+        // Fallback to previous purely-local behaviour (no backend)
+        payloadForOnSave = {
+          vehicleName,
+          regNumber,
+          ownerName,
+          monitoringMode,
+          consentFileName: consentFile.name,
+          source: "local",
+        };
+      }
+
+      onSave?.(payloadForOnSave);
+      resetForm();
+    } catch (err) {
+      console.error("Register vehicle failed:", err);
+      setError(
+        "Failed to register vehicle in backend. Please check your connection and try again."
+      );
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -176,8 +214,9 @@ export default function RegisterVehicleModal({ isOpen, onClose, onSave }) {
                   )}
                 </div>
                 <p className="mt-1 text-[0.7rem] text-slate-500">
-                  This file is kept only in this browser demo – no backend
-                  upload is performed yet.
+                  {operatorId
+                    ? "Consent file will be stored in the Wind Granma backend under your operator account."
+                    : "This file is kept only in this browser demo – no backend upload is performed yet."}
                 </p>
               </div>
 
@@ -192,14 +231,16 @@ export default function RegisterVehicleModal({ isOpen, onClose, onSave }) {
                   type="button"
                   onClick={handleClose}
                   className="px-4 py-2 rounded-xl border border-slate-700/80 text-xs text-slate-200 hover:bg-slate-800/80"
+                  disabled={submitting}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-accent-soft text-xs font-medium text-slate-950 hover:bg-accent transition-colors"
+                  className="px-4 py-2 rounded-xl bg-accent-soft text-xs font-medium text-slate-950 hover:bg-accent transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                  disabled={submitting}
                 >
-                  Save & register
+                  {submitting ? "Saving…" : "Save & register"}
                 </button>
               </div>
             </form>

@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
 function statusFromCapacity(capMin, capMax, source) {
-  if (source === "local" || capMax == null) {
+  if (source === "local" || source === "registered" || capMax == null) {
     return {
       label: "Awaiting data",
       color: "bg-slate-600/40 text-slate-200",
@@ -44,7 +44,8 @@ export default function VehicleCard({ vehicle }) {
   const navigate = useNavigate();
 
   const isLocal = source === "local";
-  const canNavigate = !isLocal;
+  const isRegistered = source === "registered";
+  const canNavigate = !(isLocal || isRegistered);
 
   const handleClick = () => {
     if (!canNavigate) return;
@@ -53,9 +54,11 @@ export default function VehicleCard({ vehicle }) {
 
   const title =
     display_name ||
-    `EV-${typeof vehicle_id === "number"
-      ? String(vehicle_id).padStart(2, "0")
-      : String(vehicle_id)}`;
+    `EV-${
+      typeof vehicle_id === "number"
+        ? String(vehicle_id).padStart(2, "0")
+        : String(vehicle_id)
+    }`;
 
   const samplesValue =
     typeof n_samples === "number" && n_samples >= 0 ? n_samples : 0;
@@ -96,6 +99,12 @@ export default function VehicleCard({ vehicle }) {
           {isLocal && (
             <p className="text-[0.7rem] text-slate-500 mt-0.5">
               Locally registered only · data pipeline not connected yet
+            </p>
+          )}
+          {isRegistered && (
+            <p className="text-[0.7rem] text-slate-500 mt-0.5">
+              Registered fleet vehicle · telemetry will appear here as your data
+              pipeline uploads monthly samples.
             </p>
           )}
         </div>
