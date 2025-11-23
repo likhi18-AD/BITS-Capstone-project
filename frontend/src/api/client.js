@@ -1,7 +1,7 @@
 // frontend/src/api/client.js
 import axios from "axios";
 
-// FastAPI backend base URL (matches uvicorn http://127.0.0.1:8000)
+// FastAPI backend base URL
 export const API_BASE = "http://127.0.0.1:8000";
 
 const api = axios.create({
@@ -9,15 +9,18 @@ const api = axios.create({
 });
 
 // -----------------------
-// Existing fleet telemetry helpers
+// Fleet telemetry helpers
 // -----------------------
 
+// Demo fleet (20 vehicles)
 export async function fetchVehicles() {
   const res = await api.get("/vehicles");
-  // Keep original behaviour: caller expects res.data.vehicles
-  return res.data.vehicles;
+  // FleetOverview handles both {vehicles: [...]} and [...]
+  // so returning res.data (which is { vehicles: [...] }) is fine.
+  return res.data;
 }
 
+// Timeseries for one vehicle (VehicleDetail page)
 export async function fetchVehicleTimeseries(vehicleId) {
   const res = await api.get(`/vehicles/${vehicleId}/timeseries`);
   return res.data;
@@ -52,10 +55,9 @@ export async function resetPassword(payload) {
 }
 
 // -----------------------
-// Operator-specific registered vehicles
+// Operator-specific vehicles
 // -----------------------
 
-// Get all vehicles registered by a specific operator
 export async function fetchOperatorVehicles(operatorId) {
   if (!operatorId) return [];
   const res = await api.get(
@@ -81,6 +83,36 @@ export async function registerOperatorVehicle(operatorId, form) {
 
   const res = await api.post(
     `/operators/${encodeURIComponent(operatorId)}/vehicles`,
+    fd,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return res.data;
+}
+
+// Delete a registered vehicle with a deletion-consent PDF
+export async function deleteOperatorVehicle(operatorId, vehicleId, file) {
+  if (!operatorId) {
+    throw new Error("Missing operatorId for vehicle deletion");
+  }
+  if (!vehicleId) {
+    throw new Error("Missing vehicleId for vehicle deletion");
+  }
+  if (!(file instanceof File)) {
+    throw new Error("Deletion consent PDF is required");
+  }
+
+  const fd = new FormData();
+  fd.append("deletion_consent", file);
+
+  const res = await api.post(
+    `/operators/${encodeURIComponent(
+      operatorId
+    )}/vehicles/${encodeURIComponent(vehicleId)}/delete`,
     fd,
     {
       headers: {

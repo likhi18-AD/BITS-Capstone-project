@@ -360,6 +360,62 @@ def list_vehicles_for_operator(operator_id: str):
     return {"vehicles": vehicles}
 
 
+@app.post(
+    "/operators/{operator_id}/vehicles/{vehicle_id}/delete",
+    summary="Delete a registered vehicle with a deregistration PDF",
+)
+async def delete_vehicle_for_operator(
+    operator_id: str,
+    vehicle_id: str,
+    deletion_consent: UploadFile = File(...),
+):
+    """
+    Delete a vehicle registration (and its telemetry) for this operator.
+
+    - Stores the owner's deletion request PDF under backend/app/data/deletion_forms
+    - Removes the vehicle from fleet_registry.sqlite3
+    - Deletes telemetry_monthly rows for this vehicle
+    """
+    try:
+        # 1) Store deletion consent PDF in a separate directory
+        deletion_dir = fleet_registry.get_deletion_dir()
+        deletion_dir.mkdir(parents=True, exist_ok=True)
+
+        original = deletion_consent.filename or "deletion.pdf"
+        ext = Path(original).suffix or ".pdf"
+        safe_name = f"{operator_id}_{vehicle_id}_{int(time.time())}{ext}"
+        dest_path = deletion_dir / safe_name
+
+        contents = await deletion_consent.read()
+        with dest_path.open("wb") as f:
+            f.write(contents)
+
+        # 2) Delete from registry + telemetry
+        result = fleet_registry.delete_vehicle(
+            operator_id=operator_id,
+            vehicle_uid=vehicle_id,
+        )
+
+        # 3) Return combined info
+        return {
+            "ok": True,
+            "operator_id": operator_id,
+            "vehicle_id": vehicle_id,
+            "deletion_file": safe_name,
+            "removed": result.get("removed", True),
+            "display_name": result.get("display_name"),
+        }
+
+    except ValueError as e:
+        # Vehicle not found for this operator
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete vehicle: {e}",
+        )
+
+
 # ------------------- AUTH: REGISTER & LOGIN -------------------
 
 

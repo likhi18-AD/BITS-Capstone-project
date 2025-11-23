@@ -19,6 +19,9 @@ DB_PATH = DATA_DIR / "fleet_registry.sqlite3"
 APP_DIR = Path(__file__).resolve().parent.parent  # backend/app
 CONSENT_DIR = APP_DIR / "data" / "consent_forms"
 
+# Deletion forms (owner deregistration PDFs) live under backend/app/data/deletion_forms
+DELETION_DIR = APP_DIR / "data" / "deletion_forms"
+
 
 def _get_conn() -> sqlite3.Connection:
   DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -102,6 +105,15 @@ def get_consent_dir() -> Path:
   return CONSENT_DIR
 
 
+def get_deletion_dir() -> Path:
+  """
+  Used by main.py to know where to drop deregistration PDFs.
+  This is kept separate from consent_forms.
+  """
+  DELETION_DIR.mkdir(parents=True, exist_ok=True)
+  return DELETION_DIR
+
+
 def _row_to_vehicle_dict(row: sqlite3.Row) -> Dict:
   """
   Shape matches the objects returned by /vehicles so VehicleCard
@@ -182,6 +194,48 @@ def list_vehicles_for_operator(operator_id: str) -> List[Dict]:
     rows = cur.fetchall()
 
   return [_row_to_vehicle_dict(r) for r in rows]
+
+
+def delete_vehicle(operator_id: str, vehicle_uid: str) -> Dict:
+  """
+  Delete a vehicle (and its monthly telemetry) for a given operator.
+
+  Raises ValueError if the vehicle is not found for this operator.
+  """
+  with _get_conn() as conn:
+    cur = conn.cursor()
+
+    # Check existence and grab some info for the response
+    cur.execute(
+      "SELECT * FROM vehicles WHERE operator_id = ? AND vehicle_uid = ?;",
+      (operator_id, vehicle_uid),
+    )
+    row = cur.fetchone()
+    if row is None:
+      raise ValueError(
+        f"Vehicle '{vehicle_uid}' not found for operator '{operator_id}'"
+      )
+
+    # Remove all monthly telemetry for this vehicle
+    cur.execute(
+      "DELETE FROM telemetry_monthly WHERE vehicle_uid = ?;",
+      (vehicle_uid,),
+    )
+
+    # Remove the vehicle registration entry
+    cur.execute(
+      "DELETE FROM vehicles WHERE operator_id = ? AND vehicle_uid = ?;",
+      (operator_id, vehicle_uid),
+    )
+
+    conn.commit()
+
+  return {
+    "operator_id": operator_id,
+    "vehicle_id": vehicle_uid,
+    "removed": True,
+    "display_name": row["display_name"],
+  }
 
 
 def _generate_vehicle_uid(operator_id: str) -> str:

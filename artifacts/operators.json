@@ -22,5 +22,11 @@
     "email": "likhith.yalamanchi18@gmail.com",
     "employee_id": "EMP007",
     "password_hash": "4b2e11f99c0b3b93446e868ef59d3fecaa9448d53e3b8945874ea91d985b3049"
+  },
+  {
+    "operator_id": "QP639",
+    "email": "verifiedhomosapien@gmail.com",
+    "employee_id": "EMP008",
+    "password_hash": "01301765281e984242f4df77c154509d84aa73d44623d527958c85fe3c105312"
   }
 ]

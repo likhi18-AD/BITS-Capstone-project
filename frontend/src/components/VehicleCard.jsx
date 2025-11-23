@@ -27,7 +27,7 @@ function statusFromCapacity(capMin, capMax, source) {
   };
 }
 
-export default function VehicleCard({ vehicle }) {
+export default function VehicleCard({ vehicle, onRequestDelete }) {
   const {
     vehicle_id,
     n_samples,
@@ -50,6 +50,14 @@ export default function VehicleCard({ vehicle }) {
   const handleClick = () => {
     if (!canNavigate) return;
     navigate(`/vehicle/${vehicle_id}`);
+  };
+
+  const handleDeleteClick = (e) => {
+    // prevent bubbling to card onClick
+    e.stopPropagation();
+    if (onRequestDelete) {
+      onRequestDelete(vehicle);
+    }
   };
 
   const title =
@@ -108,11 +116,22 @@ export default function VehicleCard({ vehicle }) {
             </p>
           )}
         </div>
-        <span
-          className={`text-xs px-3 py-1 rounded-full font-medium ${status.color}`}
-        >
-          {status.label}
-        </span>
+        <div className="flex flex-col items-end gap-2">
+          <span
+            className={`text-xs px-3 py-1 rounded-full font-medium ${status.color}`}
+          >
+            {status.label}
+          </span>
+          {isRegistered && (
+            <button
+              type="button"
+              onClick={handleDeleteClick}
+              className="text-[0.65rem] px-2 py-1 rounded-full border border-rose-500/70 text-rose-300 hover:bg-rose-500/15"
+            >
+              Delete
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 text-xs text-slate-300">

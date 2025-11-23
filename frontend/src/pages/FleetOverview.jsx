@@ -21,6 +21,7 @@ import RegisterVehicleModal from "../components/RegisterVehicleModal";
 import MessageFeed from "../components/MessageFeed";
 import IDBar from "../components/IDBar";
 import MLForecastPanel from "../components/MLForecastPanel";
+import DeleteVehicleModal from "../components/DeleteVehicleModal";
 
 // --- helper to generate realistic EV health messages --- //
 function generateRandomMessage(vehicles) {
@@ -88,6 +89,10 @@ export default function FleetOverview() {
   const [idItems, setIdItems] = useState([]);
 
   const [isForecastOpen, setIsForecastOpen] = useState(false);
+
+  // delete-vehicle modal state
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   // vehicle list UX
   const [vehicleQuery, setVehicleQuery] = useState("");
@@ -289,6 +294,14 @@ export default function FleetOverview() {
     ]);
 
     setIsRegisterOpen(false);
+  };
+
+  // When a vehicle is deleted successfully from backend
+  const handleDeletedVehicle = (vehicleId) => {
+    setOperatorVehicles((prev) =>
+      prev.filter((v) => v.vehicle_id !== vehicleId)
+    );
+    setIdItems((prev) => prev.filter((item) => item.id !== vehicleId));
   };
 
   // message actions
@@ -588,7 +601,18 @@ export default function FleetOverview() {
                       </p>
                     )}
                   {filteredVehicles.map((v) => (
-                    <VehicleCard key={v.vehicle_id} vehicle={v} />
+                    <VehicleCard
+                      key={v.vehicle_id}
+                      vehicle={v}
+                      onRequestDelete={
+                        v.source === "registered"
+                          ? (veh) => {
+                              setDeleteTarget(veh);
+                              setIsDeleteOpen(true);
+                            }
+                          : undefined
+                      }
+                    />
                   ))}
                 </div>
               </motion.div>
@@ -605,6 +629,18 @@ export default function FleetOverview() {
         isOpen={isForecastOpen}
         onClose={() => setIsForecastOpen(false)}
         vehicles={remoteVehicles}
+      />
+
+      {/* Delete vehicle modal */}
+      <DeleteVehicleModal
+        isOpen={isDeleteOpen}
+        onClose={() => {
+          setIsDeleteOpen(false);
+          setDeleteTarget(null);
+        }}
+        vehicle={deleteTarget}
+        operatorId={operator?.operator_id}
+        onDeleted={handleDeletedVehicle}
       />
 
       {/* Register vehicle modal */}
