@@ -7,7 +7,7 @@ export default function RegisterVehicleModal({
   isOpen,
   onClose,
   onSave,
-  operatorId, // new optional prop – current logged-in operator
+  operatorId, 
 }) {
   const [vehicleName, setVehicleName] = useState("");
   const [regNumber, setRegNumber] = useState("");
@@ -55,7 +55,6 @@ export default function RegisterVehicleModal({
       let payloadForOnSave;
 
       if (operatorId) {
-        // Persist in backend for this operator
         const backendVehicle = await registerOperatorVehicle(operatorId, {
           vehicleName,
           regNumber,
@@ -64,10 +63,8 @@ export default function RegisterVehicleModal({
           consentFile,
         });
 
-        // backendVehicle already has vehicle_id, source: "registered", etc.
         payloadForOnSave = backendVehicle;
       } else {
-        // Fallback to previous purely-local behaviour (no backend)
         payloadForOnSave = {
           vehicleName,
           regNumber,

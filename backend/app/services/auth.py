@@ -25,14 +25,9 @@ from typing import Dict, List, Optional
 
 from ..config import FEAT_DF_CSV
 
-# Use the same artifacts directory as the rest of the project
 ART_DIR: Path = FEAT_DF_CSV.parent
 OPERATORS_DB_PATH: Path = ART_DIR / "operators.json"
 EMPLOYEE_IDS_PATH: Path = ART_DIR / "employee_ids.txt"
-
-
-# ---------- Small error types ----------
-
 
 class EmployeeNotFound(Exception):
     pass
@@ -54,10 +49,6 @@ class Operator:
   employee_id: str
   password_hash: str
 
-
-# ---------- Helpers for JSON DB ----------
-
-
 def _load_operators() -> List[Dict]:
     if not OPERATORS_DB_PATH.exists():
         return []
@@ -78,7 +69,7 @@ def _save_operators(ops: List[Dict]) -> None:
 
 
 def _hash_password(password: str) -> str:
-    # Basic SHA-256 hash; good enough for dev / demo
+    
     return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
 
@@ -112,9 +103,6 @@ def _load_valid_employee_ids() -> Optional[set]:
     return ids
 
 
-# ---------- Public API used by FastAPI ----------
-
-
 def register_operator(email: str, password: str, employee_id: str) -> Operator:
     """
     Register a new operator if employee_id is valid and not already registered.
@@ -138,7 +126,6 @@ def register_operator(email: str, password: str, employee_id: str) -> Operator:
 
     ops = _load_operators()
 
-    # Check duplicates (same email OR same employee_id)
     for o in ops:
         if o.get("employee_id") == employee_id:
             raise OperatorAlreadyExists(
@@ -162,7 +149,6 @@ def register_operator(email: str, password: str, employee_id: str) -> Operator:
     ops.append(op)
     _save_operators(ops)
 
-    # In a real system, you would send an email here.
     _log_fake_email(email, operator_id)
 
     return Operator(
@@ -254,7 +240,7 @@ def _log_fake_email(email: str, operator_id: str) -> None:
     You can replace this with real SMTP integration later.
     """
     msg = f"""
-    ================== FLEET OPERATOR WELCOME EMAIL ==================
+
     To      : {email}
     Subject : Welcome to Wind Granma Fleet Monitoring!
 
@@ -271,6 +257,5 @@ def _log_fake_email(email: str, operator_id: str) -> None:
     Wishing you efficient, safe and data-driven fleet monitoring!
 
     -- Wind Granma Analytics Platform
-    =================================================================
     """
     print(msg)

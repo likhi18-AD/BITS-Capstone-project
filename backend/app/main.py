@@ -13,7 +13,7 @@ import hashlib
 import hmac
 import json
 import time
-from pathlib import Path  # <-- added
+from pathlib import Path  
 
 from .config import (
     FEAT_DF_CSV,
@@ -28,7 +28,7 @@ from .config import (
 )
 from .services import telemetry
 from .services import auth
-from .services import fleet_registry  # <-- added
+from .services import fleet_registry  
 from . import ml_forecast
 
 
@@ -38,18 +38,14 @@ app = FastAPI(
     version="0.3.0",
 )
 
-# CORS: allow localhost frontends during development
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten later
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-# ------------------- BASIC HEALTH & META -------------------
-
 
 @app.get("/health")
 def health_check():
@@ -81,9 +77,6 @@ def telemetry_mapping():
         "columns": list(df.columns),
         "n_rows": len(df),
     }
-
-
-# ------------------- EMAIL HELPERS -------------------
 
 
 def send_operator_welcome_email(to_email: str, operator_id: str) -> None:
@@ -163,7 +156,7 @@ Wind Granma – EV Fleet Analytics
         print(f"[email] Failed to send password reset email to {to_email}: {e}")
 
 
-# ------------------- RESET TOKEN HELPERS -------------------
+#TOKEN HELPERS
 
 
 def _b64url_encode(data: bytes) -> str:
@@ -221,7 +214,7 @@ def verify_reset_token(token: str) -> dict:
     return payload
 
 
-# ------------------- VEHICLE LIST & TIMESERIES -------------------
+#VEHICLE LIST & TIMESERIES
 
 
 @app.get("/vehicles")
@@ -249,7 +242,6 @@ def vehicle_timeseries(vehicle_id: str):
 
     df = ts.copy()
 
-    # Ensure time column is JSON-serialisable
     if telemetry.TIME_COL in df.columns:
         df[telemetry.TIME_COL] = df[telemetry.TIME_COL].astype(str)
 
@@ -276,9 +268,7 @@ def vehicle_timeseries(vehicle_id: str):
     }
 
 
-# ------------------- REGISTERED VEHICLES (PER-OPERATOR) -------------------
-# NEW SECTION
-
+# REGISTERED VEHICLES (PER-OPERATOR)
 
 class RegisteredVehicleOut(BaseModel):
     """
@@ -377,7 +367,7 @@ async def delete_vehicle_for_operator(
     - Deletes telemetry_monthly rows for this vehicle
     """
     try:
-        # 1) Store deletion consent PDF in a separate directory
+        # Store deletion consent PDF in a separate directory
         deletion_dir = fleet_registry.get_deletion_dir()
         deletion_dir.mkdir(parents=True, exist_ok=True)
 
@@ -390,13 +380,13 @@ async def delete_vehicle_for_operator(
         with dest_path.open("wb") as f:
             f.write(contents)
 
-        # 2) Delete from registry + telemetry
+        # Delete from registry + telemetry
         result = fleet_registry.delete_vehicle(
             operator_id=operator_id,
             vehicle_uid=vehicle_id,
         )
 
-        # 3) Return combined info
+        # Return combined info
         return {
             "ok": True,
             "operator_id": operator_id,
@@ -416,8 +406,7 @@ async def delete_vehicle_for_operator(
         )
 
 
-# ------------------- AUTH: REGISTER & LOGIN -------------------
-
+# AUTH: REGISTER & LOGIN
 
 class RegisterRequest(BaseModel):
     email: str
@@ -532,7 +521,6 @@ def forgot_password(req: ForgotPasswordRequest, background_tasks: BackgroundTask
     try:
         op = auth.find_operator_by_email(req.email)
     except auth.OperatorNotFound:
-        # Don't reveal whether the email exists
         return ForgotPasswordResponse(
             message="If an account exists for this email, a reset link has been sent."
         )
@@ -581,7 +569,7 @@ def reset_password(req: ResetPasswordRequest):
     )
 
 
-# ------------------- ML ROLLING FORECAST -------------------
+# ML ROLLING FORECAST
 
 
 class ForecastRequest(BaseModel):

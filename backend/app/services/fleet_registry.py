@@ -10,16 +10,12 @@ from typing import Dict, List, Optional
 
 from ..config import DATA_DIR
 
-# === Paths ===
-# DB still uses config.DATA_DIR (same as before)
+
 DB_PATH = DATA_DIR / "fleet_registry.sqlite3"
 
-# Consent forms are now forced to live under backend/app/data/consent_forms
-# regardless of where DATA_DIR points.
 APP_DIR = Path(__file__).resolve().parent.parent  # backend/app
 CONSENT_DIR = APP_DIR / "data" / "consent_forms"
 
-# Deletion forms (owner deregistration PDFs) live under backend/app/data/deletion_forms
 DELETION_DIR = APP_DIR / "data" / "deletion_forms"
 
 
@@ -35,7 +31,6 @@ def _init_db() -> None:
   with _get_conn() as conn:
     cur = conn.cursor()
 
-    # 1) Vehicles registered by operators
     cur.execute(
       """
       CREATE TABLE IF NOT EXISTS vehicles (
@@ -52,7 +47,6 @@ def _init_db() -> None:
       """
     )
 
-    # 2) Monthly telemetry table – columns match the list you sent
     cur.execute(
       """
       CREATE TABLE IF NOT EXISTS telemetry_monthly (
@@ -95,7 +89,6 @@ def _init_db() -> None:
     conn.commit()
 
 
-# Initialise tables on import
 _init_db()
 
 
@@ -205,7 +198,6 @@ def delete_vehicle(operator_id: str, vehicle_uid: str) -> Dict:
   with _get_conn() as conn:
     cur = conn.cursor()
 
-    # Check existence and grab some info for the response
     cur.execute(
       "SELECT * FROM vehicles WHERE operator_id = ? AND vehicle_uid = ?;",
       (operator_id, vehicle_uid),
@@ -216,13 +208,11 @@ def delete_vehicle(operator_id: str, vehicle_uid: str) -> Dict:
         f"Vehicle '{vehicle_uid}' not found for operator '{operator_id}'"
       )
 
-    # Remove all monthly telemetry for this vehicle
     cur.execute(
       "DELETE FROM telemetry_monthly WHERE vehicle_uid = ?;",
       (vehicle_uid,),
     )
 
-    # Remove the vehicle registration entry
     cur.execute(
       "DELETE FROM vehicles WHERE operator_id = ? AND vehicle_uid = ?;",
       (operator_id, vehicle_uid),

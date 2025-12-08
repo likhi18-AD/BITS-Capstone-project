@@ -10,7 +10,7 @@ import "./Login.css";
 
 function Login() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState("login"); // "login" | "register" | "forgot"
+  const [mode, setMode] = useState("login"); 
 
   // Login form state
   const [loginId, setLoginId] = useState("");

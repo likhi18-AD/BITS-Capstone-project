@@ -23,7 +23,7 @@ import IDBar from "../components/IDBar";
 import MLForecastPanel from "../components/MLForecastPanel";
 import DeleteVehicleModal from "../components/DeleteVehicleModal";
 
-// --- helper to generate realistic EV health messages --- //
+//helper to generate realistic EV health messages //
 function generateRandomMessage(vehicles) {
   if (!vehicles.length) return null;
   const v = vehicles[Math.floor(Math.random() * vehicles.length)];
@@ -98,7 +98,7 @@ export default function FleetOverview() {
   const [vehicleQuery, setVehicleQuery] = useState("");
   const [vehicleListExpanded, setVehicleListExpanded] = useState(false);
 
-  // --- load vehicles from backend (demo fleet) --- //
+  // load vehicles from backend 
   useEffect(() => {
     let cancelled = false;
 
@@ -126,7 +126,7 @@ export default function FleetOverview() {
     };
   }, []);
 
-  // --- load operator + per-operator vehicles --- //
+  //load operator + per-operator vehicles
   useEffect(() => {
     const op = getStoredOperator();
     if (!op) {
@@ -154,7 +154,7 @@ export default function FleetOverview() {
     };
   }, [navigate]);
 
-  // --- auto-generate messages every 2 minutes based on remote vehicles --- //
+  
   useEffect(() => {
     if (!remoteVehicles.length) return;
 
@@ -206,7 +206,7 @@ export default function FleetOverview() {
       }));
   }, [remoteVehicles]);
 
-  // --- filtered vehicles for search --- //
+  // filtered vehicles for search 
   const filteredVehicles = useMemo(() => {
     const q = vehicleQuery.trim().toLowerCase();
     if (!q) return allVehicles;
@@ -230,7 +230,7 @@ export default function FleetOverview() {
   };
   const handleLogout = () => {
     try {
-      // clear both possible keys just in case
+      // clear both possible keys 
       window.localStorage.removeItem("windgranma_operator");
       window.localStorage.removeItem("wind_granma_operator");
     } catch (e) {

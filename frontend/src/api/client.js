@@ -8,27 +8,21 @@ const api = axios.create({
   baseURL: API_BASE,
 });
 
-// -----------------------
-// Fleet telemetry helpers
-// -----------------------
+// Fleet telemetry helper
 
 // Demo fleet (20 vehicles)
 export async function fetchVehicles() {
   const res = await api.get("/vehicles");
-  // FleetOverview handles both {vehicles: [...]} and [...]
-  // so returning res.data (which is { vehicles: [...] }) is fine.
   return res.data;
 }
 
-// Timeseries for one vehicle (VehicleDetail page)
+// Timeseries for one vehicle 
 export async function fetchVehicleTimeseries(vehicleId) {
   const res = await api.get(`/vehicles/${vehicleId}/timeseries`);
   return res.data;
 }
 
-// -----------------------
 // Auth / operator account helpers
-// -----------------------
 
 export async function loginOperator(payload) {
   // payload: { operator_id, password }
@@ -54,9 +48,7 @@ export async function resetPassword(payload) {
   return res.data;
 }
 
-// -----------------------
-// Operator-specific vehicles
-// -----------------------
+// Operator-specific vehicle
 
 export async function fetchOperatorVehicles(operatorId) {
   if (!operatorId) return [];
@@ -67,10 +59,8 @@ export async function fetchOperatorVehicles(operatorId) {
   return res.data.vehicles || res.data;
 }
 
-// Register a new vehicle for this operator (with optional consent PDF)
+// Register a new vehicle for this operator 
 export async function registerOperatorVehicle(operatorId, form) {
-  // `form` is the object from RegisterVehicleModal:
-  // { vehicleName, regNumber, ownerName, monitoringMode, consentFile }
   const fd = new FormData();
   fd.append("vehicle_name", form.vehicleName || "");
   fd.append("reg_number", form.regNumber || "");
@@ -124,9 +114,7 @@ export async function deleteOperatorVehicle(operatorId, vehicleId, file) {
   return res.data;
 }
 
-// -----------------------
 // Helper: read stored operator from localStorage
-// -----------------------
 
 export function getStoredOperator() {
   try {

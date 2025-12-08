@@ -8,18 +8,6 @@ import pandas as pd
 
 from ..config import FEAT_DF_CSV
 
-# ---- COLUMN MAPPING FOR YOUR feat_df_all_vehicles.csv ----
-# From your screenshot the columns are:
-# ['vehicle', 'month_ts', 'Month', 'Ca', 'I_ave', 'I_sum', 'I_std',
-#  'Vpack_ave', 'Vpack_sum', 'Vpack_std', 'SOC_ave', 'SOC_sum', 'SOC_std',
-#  'Vmax_ave', 'Vmax_sum', 'Vmax_std', 'Vmin_ave', 'Vmin_sum', 'Vmin_std',
-#  'Tmax_ave', 'Tmax_sum', 'Tmax_std', 'Tmin_ave', 'Tmin_sum', 'Tmin_std',
-#  'Vd_ave', 'Vd_sum', 'Vd_std', 'Td_ave', 'Td_sum', 'Td_std']
-
-# We treat:
-#   vehicle   -> vehicle id
-#   month_ts  -> time (monthly timestamp)
-#   Ca        -> capacity / SoH proxy
 ID_COL = "vehicle"
 TIME_COL = "month_ts"
 CAPACITY_COL = "Ca"
@@ -34,7 +22,6 @@ def load_feat_df() -> pd.DataFrame:
     """
     df = pd.read_csv(FEAT_DF_CSV)
 
-    # Ensure time column is parsed as datetime if present
     if TIME_COL in df.columns:
         df[TIME_COL] = pd.to_datetime(df[TIME_COL], errors="coerce")
 
@@ -62,7 +49,7 @@ def list_vehicles_with_stats() -> List[Dict[str, Any]]:
     vehicles: List[Dict[str, Any]] = []
 
     for vid, g in groups:
-        # normalise vehicle_id type for API (int if numeric, else str)
+        
         if np.issubdtype(g[ID_COL].dtype, np.number):
             vid_api: Any = int(vid)
         else:
@@ -110,10 +97,9 @@ def get_vehicle_timeseries(vehicle_id: Any) -> pd.DataFrame:
             f"but got: {list(df.columns)}"
         )
 
-    # First attempt: direct equality
     mask = df[ID_COL] == vehicle_id
 
-    # If empty, try casting to int (handles "1" vs 1)
+    # If empty, try casting to int s
     if not mask.any():
         try:
             v_int = int(vehicle_id)

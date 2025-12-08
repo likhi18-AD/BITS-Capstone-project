@@ -31,14 +31,8 @@ from sklearn.svm import SVR as _SVR
 
 from .config import FEAT_DF_CSV
 
-# -------------------------------------------------------------------
-# Paths & basic loading
-# -------------------------------------------------------------------
-
-# FEAT_DF_CSV should point to artifacts/feat_df_all_vehicles.csv
 CSV_PATH = FEAT_DF_CSV
-ART_DIR = FEAT_DF_CSV.parent  # artifacts/ directory
-
+ART_DIR = FEAT_DF_CSV.parent  
 
 @lru_cache(maxsize=1)
 def load_feat_df() -> pd.DataFrame:
@@ -48,7 +42,7 @@ def load_feat_df() -> pd.DataFrame:
 
   df = pd.read_csv(CSV_PATH, parse_dates=["month_ts"])
 
-  # cast numeric columns
+  
   non_num = {"vehicle", "Month", "month_ts"}
   num_cols = [c for c in df.columns if c not in non_num]
   df[num_cols] = df[num_cols].apply(pd.to_numeric, errors="coerce")
@@ -83,7 +77,7 @@ def _load_cfg_and_artifacts():
       "x2_sc": ART_DIR / "x2_scaler.pkl",
   }
 
-  # quick schema sanity check
+  #schema check
   df = load_feat_df()
   needed_cols = {"Tmax_ave", "Tmin_ave"}
   missing = [c for c in needed_cols if c not in df.columns]
@@ -132,9 +126,7 @@ def _build_vehicle_slice(
   return d, c, X, mon
 
 
-# -------------------------------------------------------------------
-# Seq2Seq-I + residual GPR-I (paper model)
-# -------------------------------------------------------------------
+# Seq2Seq-I + residual GPR-I 
 
 
 def _forecast_seq2seq_gpr(
@@ -151,9 +143,8 @@ def _forecast_seq2seq_gpr(
     - residual GPR on (Month, Tmax_ave, Tmin_ave) for correction
   """
 
-  # Delayed import so TF is only needed when this model is used
-  import tensorflow as tf  # noqa: F401
-  from tensorflow import keras  # type: ignore
+  import tensorflow as tf  
+  from tensorflow import keras  
 
   # Load artifacts
   seq2seq = keras.models.load_model(paths["seq2seq"])
@@ -177,7 +168,7 @@ def _forecast_seq2seq_gpr(
       # window of known Ca + HI features
       W = np.c_[c_win[-n_known:].reshape(-1, 1), X[k - n_known : k, :]]
 
-      # scale Ca and features separately (same as notebook)
+      # scale Ca and features separately
       Wc = ca_sc.transform(W[:, [0]])
       Wf = f_sc.transform(W[:, 1:])
       x_in = np.concatenate([Wc, Wf], axis=1)[None, ...]
@@ -203,11 +194,7 @@ def _forecast_seq2seq_gpr(
 
   return t_all, c, y_pred
 
-
-# -------------------------------------------------------------------
 # Static SVR / GPR baselines
-# -------------------------------------------------------------------
-
 
 def _get_or_train_static(model_name, df, use_features, save_name: str):
   """
@@ -218,7 +205,7 @@ def _get_or_train_static(model_name, df, use_features, save_name: str):
   if save_path.exists():
       return joblib.load(save_path)
 
-  # Use first 10 vehicles for training (same as notebook)
+  # Use first 10 vehicles for training 
   vids = sorted(df["vehicle"].unique())[:10]
   train = df[df["vehicle"].isin(vids)].dropna(subset=["Ca"]).copy()
 
@@ -267,9 +254,7 @@ def _predict_static_curve(df, vehicle, n_known, max_h, use_features, bundle):
   return t_all, c, y_pred
 
 
-# -------------------------------------------------------------------
 # Public API
-# -------------------------------------------------------------------
 
 ModelKey = Literal["seq2seq_gpr", "gpr", "svr"]
 
@@ -350,11 +335,10 @@ def run_forecast(
       "degradation_pct": degr_pct,
   }
 
-  # Optional: attach a base64-encoded PNG plot of actual vs predicted Ca
+  # base64-encoded PNG plot of actual vs predicted Ca
   try:
-      import matplotlib.pyplot as plt  # type: ignore
+      import matplotlib.pyplot as plt  
 
-      # Dark themed plot to match frontend
       fig, ax = plt.subplots(figsize=(4.2, 2.3), dpi=120)
       fig.patch.set_facecolor("#020617")
       ax.set_facecolor("#020617")
@@ -366,7 +350,7 @@ def run_forecast(
       mask_true = ~np.isnan(y_true_arr)
       mask_pred = ~np.isnan(y_pred_arr)
 
-      # Actual Ca – solid cyan
+      # Actual Ca 
       if mask_true.any():
           ax.plot(
               t_arr[mask_true],
@@ -376,7 +360,7 @@ def run_forecast(
               color="#38bdf8",  # sky-400
           )
 
-      # Predicted Ca – dashed amber
+      # Predicted Ca 
       if mask_pred.any():
           ax.plot(
               t_arr[mask_pred],
@@ -398,7 +382,6 @@ def run_forecast(
           spine.set_color("#374151")
           spine.set_linewidth(0.8)
 
-      # Legend with dark background
       leg = ax.legend(
           fontsize=7,
           frameon=True,
@@ -423,8 +406,7 @@ def run_forecast(
       buf.seek(0)
       result["plot_png"] = base64.b64encode(buf.read()).decode("ascii")
   except Exception:
-      # Plot is optional; if anything fails (matplotlib missing, etc.),
-      # just skip it and keep the rest of the payload.
+    
       result["plot_png"] = None
 
   return result

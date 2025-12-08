@@ -171,7 +171,7 @@ export default function MLForecastPanel({ isOpen, onClose, vehicles }) {
       </div>
 
       <div className="drawerChart">
-        {/* Beautiful PNG plot card */}
+        {/* plot card */}
         {result && result.plot_png && (
           <div className="forecastPlotCard">
             <img

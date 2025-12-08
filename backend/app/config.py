@@ -2,16 +2,16 @@
 from pathlib import Path
 import os
 
-# Base dir is .../gpr_model
+
 BASE_DIR = Path(__file__).resolve().parents[2]
 
 ARTIFACTS_DIR = BASE_DIR / "artifacts"
 DATA_DIR      = BASE_DIR / "data"
 
-# Main feature table (from your notebook export)
+# Main feature table 
 FEAT_DF_CSV   = ARTIFACTS_DIR / "feat_df_all_vehicles.csv"
 
-# Later we’ll also use:
+
 FEATURES_CFG_JSON = ARTIFACTS_DIR / "features_f1.json"
 SEQ2SEQ_MODEL     = ARTIFACTS_DIR / "seq2seq1_f1.keras"
 GPR_RESIDUAL_PKL  = ARTIFACTS_DIR / "gpr_residual.pkl"
