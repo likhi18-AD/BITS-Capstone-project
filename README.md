@@ -59,6 +59,6 @@ As for the secret key you can generate it randomly on your linux terminal by the
 ```bash
 openssl rand -hex 32
 ```
-you will get a 32 character string copy paste it..... if you are not on linux then you can generate it by some online 32hex code genrators.
+you will get a 32 character string copy paste it, If you are not on linux then you can generate it by some online 32hex code genrators.
 
-### PS: None of this is safe for hosting the backend literally holds the passkeys and gmails in a freaking JSON file lol !
+
