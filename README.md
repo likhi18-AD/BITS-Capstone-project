@@ -59,10 +59,9 @@ As for the secret key you can generate it randomly on your linux terminal by the
 ```bash
 openssl rand -hex 32
 ```
-<<<<<<< HEAD
+
 you will get a 32 character string copy paste it, If you are not on linux then you can generate it by some online 32hex code genrators.
-=======
-you will get a 32 character string copy paste it..... if you are not on linux then you can generate it by some online 32hex code genrators.
+
 ## 5. Testing Software-Hardware Integration
 To test if the proper communication is supported use the following commands once the CAN port is setup on rasberry pi This only works if the BMS script is available either custom made or JDB given, You will start seeing generic CAN ID's being displayed. If you have the original CAN Matrix from the JDB decoding the CAN ID's is very simple. But first we need to make it systemd executable.
 1. Move the Factory Given CAN Matrix decoder to systemd service and place it in:
@@ -161,6 +160,6 @@ candump can0
 sudo apt install -y python3-can
 ```
 This is the testing for software and hardware aspect.
->>>>>>> 48fa202 (hardware integration)
+
 
 
