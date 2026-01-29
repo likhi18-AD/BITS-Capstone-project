@@ -59,6 +59,108 @@ As for the secret key you can generate it randomly on your linux terminal by the
 ```bash
 openssl rand -hex 32
 ```
+<<<<<<< HEAD
 you will get a 32 character string copy paste it, If you are not on linux then you can generate it by some online 32hex code genrators.
+=======
+you will get a 32 character string copy paste it..... if you are not on linux then you can generate it by some online 32hex code genrators.
+## 5. Testing Software-Hardware Integration
+To test if the proper communication is supported use the following commands once the CAN port is setup on rasberry pi This only works if the BMS script is available either custom made or JDB given, You will start seeing generic CAN ID's being displayed. If you have the original CAN Matrix from the JDB decoding the CAN ID's is very simple. But first we need to make it systemd executable.
+1. Move the Factory Given CAN Matrix decoder to systemd service and place it in:
+```bash
+# move and rename
+sudo mv ~/bms_can_daemon /usr/local/bin/bmsd
+
+# make sure it’s owned by root and executable
+sudo chown root:root /usr/local/bin/bmsd
+sudo chmod 755 /usr/local/bin/bmsd
+```
+Once its placed there Test it by 
+```bash 
+bmsd
+```
+ 2. Create a systemd service file
+```bash
+sudo nano /etc/systemd/system/bmsd.service
+```
+And paste the following contents, if the CAN Matrix decoder is in python then place the environment correctly. Note that intermediate steps of opening CAN port as placed here itself to make it easier.
+```bash
+[Unit]
+Description=8S BMS CAN Telemetry Daemon
+After=network.target
+
+[Service]
+Type=simple
+
+# Run the main process as your normal user
+User=kafkayash
+WorkingDirectory=/home/kafkayash
+
+# ExecStartPre commands must run as root (for ip link)
+PermissionsStartOnly=true
+
+# Bring up CAN0 in loopback mode for demo
+ExecStartPre=/usr/sbin/ip link set can0 down
+ExecStartPre=/usr/sbin/ip link set can0 type can bitrate 500000 loopback on
+ExecStartPre=/usr/sbin/ip link set can0 up
+
+# Main daemon binary (your Python-based tool in /usr/local/bin)
+ExecStart=/usr/local/bin/bmsd
+
+# Auto-restart on crash
+Restart=on-failure
+RestartSec=2
+
+# Unbuffered output so logs appear immediately in journalctl
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
+
+
+```
+3. Relaod the service and check if its working.
+```bash
+sudo systemctl daemon-reload
+
+# enable at boot (optional, but nice)
+sudo systemctl enable bmsd
+
+# start it now
+sudo systemctl start bmsd
+```
+```bash
+sudo systemctl status bmsd
+```
+4. View the live telemetry log 
+```bash
+journalctl -u bmsd -f
+```
+5. some basic commands handy to use.
+```bash
+#Stop:
+sudo systemctl stop bmsd
+#Restart
+sudo systemctl restart bmsd
+#Status
+sudo systemctl status bmsd
+#Disable and autorestart on boot
+sudo systemctl disable bmsd
+```
+6. To see RAW CAN frames use the following commands:
+```bash
+sudo ip link set can0 down
+sudo ip link set can0 type can bitrate 500000 loopback on
+sudo ip link set can0 up
+```
+Then type the following command:
+```bash
+candump can0
+```
+7. one required package if CAN Matrix decoder is in python is necessary to be installed:
+```bash
+sudo apt install -y python3-can
+```
+This is the testing for software and hardware aspect.
+>>>>>>> 48fa202 (hardware integration)
 
 
